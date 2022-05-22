@@ -35,6 +35,10 @@ class aplic():
 		W = Frame(self.Can, height = 300, width = 750, bg = "#F0B27A")
 		W.place(x = 20 , y = 520)
 
+		SV = Scale(W, from_=0, to=1, resolution= .05, orient=HORIZONTAL, length=100, bg = '#F0B27A', bd = 0, highlightbackground = '#F0B27A', label = 'Factor')
+		SV.set(0)
+		SV.place(x = 10, y = 35)
+
 
 
 		fontt = tkFont.Font(family = "Century Gothic", size = 10)
@@ -53,7 +57,7 @@ class aplic():
 		Data = pd.DataFrame(list(zip(Tiempo,D)), columns = ['Tiempo','Distancia'])
 		Res = Data
 
-		def Out_L():
+		def Out_L(fac):
 			Data = Res
 			clf = LocalOutlierFactor()
 			y_pred = clf.fit_predict(Data)
@@ -62,7 +66,7 @@ class aplic():
 			outlier_score = pd.DataFrame()
 			outlier_score["score"] = x_score
 
-			threshold = np.quantile(x_score , .05)                                            
+			threshold = np.quantile(x_score , fac)                                            
 			filtre = outlier_score["score"] < threshold
 			outlier_index = outlier_score[filtre].index.tolist()
 			print(outlier_index)
@@ -74,7 +78,7 @@ class aplic():
 		print(mymodel)
 
 		Sca = ax.scatter(Data.iloc[:,0], Data.iloc[:,1])
-		Mooo = ax.plot(Data.iloc[:,0], mymodel(Data.iloc[:,0]))
+		#Mooo = ax.plot(Data.iloc[:,0], mymodel(Data.iloc[:,0]))
 
 		def get_new():
 			new_X = [X[-1]]
@@ -86,21 +90,24 @@ class aplic():
 		def animate(i):
 			#Se obtiene loa valores que se van a graficar
 
-			OI = Out_L()
+			OI = Out_L(SV.get())
 			print('f')
 
 			if len(OI) != 0:
 				Data_coý = Data.copy()
 				Data_coý.drop(OI, inplace=True)
 				ax.clear()
-				ax.scatter(Data_coý.iloc[:,0], Data_coý.iloc[:,1])
+				ax.scatter(Data_coý.iloc[:,0], Data_coý.iloc[:,1], c='#1f77b4')
 			else:
-				Nx, Ny = get_new()
+				ax.clear()
+				ax.scatter(Data.iloc[:,0], Data.iloc[:,1], c='#1f77b4')
+				"""Nx, Ny = get_new()
 				#Se añade a la lista de puntos 
 				VX.extend(Nx)
 				VY.extend(Ny)
 				#Se grafican
 				scatter.set_offsets(np.c_[VX,VY])
+				"""
 
 		ani = animation.FuncAnimation(fig, animate)
 
