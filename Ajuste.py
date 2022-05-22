@@ -14,8 +14,10 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.colors import LinearSegmentedColormap
 from math import pi
+from matplotlib.widgets import SpanSelector
 
 fig, ax = plt.subplots()
+fig1, ax2 = plt.subplots()
 
 
 class aplic():
@@ -46,6 +48,9 @@ class aplic():
 		CA = FigureCanvasTkAgg(fig, master=self.Can)
 		CA.get_tk_widget().place(x = 25, y = 25)
 
+		CA2 = FigureCanvasTkAgg(fig1, master=self.Can)
+		CA2.get_tk_widget().place(x = 700, y = 25)
+
 
 		data = pd.read_csv('sensorultrasonico8.csv',encoding='cp1252', sep  =',')
 
@@ -56,6 +61,23 @@ class aplic():
 
 		Data = pd.DataFrame(list(zip(Tiempo,D)), columns = ['Tiempo','Distancia'])
 		Res = Data
+
+
+		line2, = ax2.plot([], [])
+		def onselect(xmin, xmax):
+			print(xmin, xmax)
+			indmin, indmax = np.searchsorted(Tiempo, (xmin, xmax))
+			indmax = min(len(Tiempo) - 1, indmax)
+
+			region_x = Tiempo[indmin:indmax]
+			region_y = D[indmin:indmax]
+			print(region_x)
+
+			if len(region_x) >= 2:
+			    line2.set_data(region_x, region_y)
+			    ax2.set_xlim(region_x.min(), region_x.max())
+			    ax2.set_ylim(region_y.min(), region_y.max())
+			    fig1.canvas.draw_idle()
 
 		def Out_L(fac):
 			Data = Res
@@ -69,8 +91,6 @@ class aplic():
 			threshold = np.quantile(x_score , fac)                                            
 			filtre = outlier_score["score"] < threshold
 			outlier_index = outlier_score[filtre].index.tolist()
-			print(outlier_index)
-
 			return outlier_index
 
 
@@ -91,7 +111,6 @@ class aplic():
 			#Se obtiene loa valores que se van a graficar
 
 			OI = Out_L(SV.get())
-			print('f')
 
 			if len(OI) != 0:
 				Data_coý = Data.copy()
@@ -108,6 +127,13 @@ class aplic():
 				#Se grafican
 				scatter.set_offsets(np.c_[VX,VY])
 				"""
+
+
+		span = SpanSelector(ax, onselect, "horizontal", useblit=True)
+		# Set useblit=True on most backends for enhanced performance.
+		
+
+
 
 		ani = animation.FuncAnimation(fig, animate)
 
