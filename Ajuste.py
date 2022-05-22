@@ -15,6 +15,7 @@ import matplotlib.animation as animation
 from matplotlib.colors import LinearSegmentedColormap
 from math import pi
 
+fig, ax = plt.subplots()
 
 
 class aplic():
@@ -31,46 +32,91 @@ class aplic():
 		self.Can = Canvas(self.root, bg = 'white', height = h, width = w)
 		self.Can.pack()
 
-		self.graph = Canvas(self.Can, bg = 'black', height = 750, width = 635)
-		self.graph.place(x = 650, y = 40)
+		W = Frame(self.Can, height = 300, width = 750, bg = "#F0B27A")
+		W.place(x = 20 , y = 520)
+
+
 
 		fontt = tkFont.Font(family = "Century Gothic", size = 10)
 
+		CA = FigureCanvasTkAgg(fig, master=self.Can)
+		CA.get_tk_widget().place(x = 25, y = 25)
+
 
 		data = pd.read_csv('sensorultrasonico8.csv',encoding='cp1252', sep  =',')
-		
-		print(data['Tiempo'].dtype)
-		print(data['Distancia'].dtype)
+
 		Tiempo = data['Tiempo']
 		D = data.iloc[:,1]
 
 		Tiempo = Tiempo.astype(float)
 
 		Data = pd.DataFrame(list(zip(Tiempo,D)), columns = ['Tiempo','Distancia'])
+		Res = Data
 
-		clf = LocalOutlierFactor()
-		y_pred = clf.fit_predict(Data)
+		def Out_L():
+			Data = Res
+			clf = LocalOutlierFactor()
+			y_pred = clf.fit_predict(Data)
 
-		x_score = clf.negative_outlier_factor_
-		outlier_score = pd.DataFrame()
-		outlier_score["score"] = x_score
+			x_score = clf.negative_outlier_factor_
+			outlier_score = pd.DataFrame()
+			outlier_score["score"] = x_score
 
-		threshold = np.quantile(x_score , .05)                                            
-		filtre = outlier_score["score"] < threshold
-		outlier_index = outlier_score[filtre].index.tolist()
+			threshold = np.quantile(x_score , .05)                                            
+			filtre = outlier_score["score"] < threshold
+			outlier_index = outlier_score[filtre].index.tolist()
+			print(outlier_index)
 
-		Data.drop(outlier_index, inplace=True)
-
-		#D = D.between(D.quantile(.05), D.quantile(.95))
+			return outlier_index
 
 
 		mymodel = np.poly1d(np.polyfit(Data.iloc[:,0],Data.iloc[:,1], 2))
 		print(mymodel)
 
-		plt.scatter(Data.iloc[:,0], Data.iloc[:,1])
-		#plt.scatter(Tiempo, D)
-		plt.plot(Data.iloc[:,0], mymodel(Data.iloc[:,0]))
-		plt.show()
+		Sca = ax.scatter(Data.iloc[:,0], Data.iloc[:,1])
+		Mooo = ax.plot(Data.iloc[:,0], mymodel(Data.iloc[:,0]))
+
+		def get_new():
+			new_X = [X[-1]]
+			new_y = [Y[-1]]
+
+			return new_X, new_y
+
+
+		def animate(i):
+			#Se obtiene loa valores que se van a graficar
+
+			OI = Out_L()
+			print('f')
+
+			if len(OI) != 0:
+				Data_coý = Data.copy()
+				Data_coý.drop(OI, inplace=True)
+				ax.clear()
+				ax.scatter(Data_coý.iloc[:,0], Data_coý.iloc[:,1])
+			else:
+				Nx, Ny = get_new()
+				#Se añade a la lista de puntos 
+				VX.extend(Nx)
+				VY.extend(Ny)
+				#Se grafican
+				scatter.set_offsets(np.c_[VX,VY])
+
+		ani = animation.FuncAnimation(fig, animate)
+
+		
+
+
+
+		#plt.show()
+
+
+
+
+
+
+
+		self.master.mainloop()
 
 
 
