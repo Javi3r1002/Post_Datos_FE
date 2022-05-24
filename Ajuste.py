@@ -15,9 +15,33 @@ import matplotlib.animation as animation
 from matplotlib.colors import LinearSegmentedColormap
 from math import pi
 from matplotlib.widgets import SpanSelector
+import os
+import pathlib
 
 fig, ax = plt.subplots()
 fig1, ax2 = plt.subplots()
+data = pd.read_csv('sensorultrasonico8.csv',encoding='cp1252', sep  =',')
+
+Tiempo = data['Tiempo']
+D = data.iloc[:,1]
+TF = Tiempo
+AAAAAA = False
+opt = ['Lineal', 'Cuadrática']
+DF = D 
+Tiempo = Tiempo.astype(float)
+
+"""
+CURR_DIR = os.getcwd()
+print(CURR_DIR)
+directorio = pathlib.Path(CURR_DIR)
+Archivos = os.listdir(directorio)
+
+for i in Archivos:
+	if i.split('.')[-1] != 'csv':
+		Archivo = Archivos.remove(i)
+print(Archivos)
+#data.to_csv('example.csv', sep =';', index = False)
+"""
 
 
 class aplic():
@@ -33,17 +57,33 @@ class aplic():
 
 		self.Can = Canvas(self.root, bg = 'white', height = h, width = w)
 		self.Can.pack()
+		fontt = tkFont.Font(family = "Times New Roman", size = 10)
 
 		W = Frame(self.Can, height = 300, width = 750, bg = "#F0B27A")
 		W.place(x = 20 , y = 520)
 
-		SV = Scale(W, from_=0, to=1, resolution= .05, orient=HORIZONTAL, length=100, bg = '#F0B27A', bd = 0, highlightbackground = '#F0B27A', label = 'Factor')
+		SV = Scale(W, from_=0, to=1, resolution= .05, orient=HORIZONTAL, length=110, bg = '#F0B27A', bd = 0, highlightbackground = '#F0B27A', label = 'Factor de correción')
 		SV.set(0)
 		SV.place(x = 10, y = 35)
 
+		des = StringVar()
 
+		L = Label(W, text = "Regresiones", font = fontt, bg = '#F0B27A')
+		L.place(x = 200, y = 35)
 
-		fontt = tkFont.Font(family = "Century Gothic", size = 10)
+		drop = OptionMenu(W, des, *opt)
+		drop.place(x = 200, y = 60)
+
+		lL = Label(self.Can, text = "Javier Mejía Alecio (20304)", font = fontt, bg = 'white')
+		lL.place(x = 50, y = 5)
+
+		global LR
+		LR = Label(W, text = "", font = fontt, bg = '#F0B27A')
+		LR.place(x = 325, y = 55)
+
+		LRG = Label(W, text = 'polinomio de la regresión:', font = fontt, bg = '#F0B27A')
+		LRG.place(x = 325, y = 35)
+
 
 		CA = FigureCanvasTkAgg(fig, master=self.Can)
 		CA.get_tk_widget().place(x = 25, y = 25)
@@ -52,32 +92,10 @@ class aplic():
 		CA2.get_tk_widget().place(x = 700, y = 25)
 
 
-		data = pd.read_csv('sensorultrasonico8.csv',encoding='cp1252', sep  =',')
-
-		Tiempo = data['Tiempo']
-		D = data.iloc[:,1]
-
-		Tiempo = Tiempo.astype(float)
 
 		Data = pd.DataFrame(list(zip(Tiempo,D)), columns = ['Tiempo','Distancia'])
 		Res = Data
 
-
-		line2, = ax2.plot([], [])
-		def onselect(xmin, xmax):
-			print(xmin, xmax)
-			indmin, indmax = np.searchsorted(Tiempo, (xmin, xmax))
-			indmax = min(len(Tiempo) - 1, indmax)
-
-			region_x = Tiempo[indmin:indmax]
-			region_y = D[indmin:indmax]
-			print(region_x)
-
-			if len(region_x) >= 2:
-			    line2.set_data(region_x, region_y)
-			    ax2.set_xlim(region_x.min(), region_x.max())
-			    ax2.set_ylim(region_y.min(), region_y.max())
-			    fig1.canvas.draw_idle()
 
 		def Out_L(fac):
 			Data = Res
@@ -93,9 +111,11 @@ class aplic():
 			outlier_index = outlier_score[filtre].index.tolist()
 			return outlier_index
 
+		def R2(X,Y,P):
+			print(len(X))
+			mymodel = np.poly1d(np.polyfit(X,Y, P))
+			return mymodel
 
-		mymodel = np.poly1d(np.polyfit(Data.iloc[:,0],Data.iloc[:,1], 2))
-		print(mymodel)
 
 		Sca = ax.scatter(Data.iloc[:,0], Data.iloc[:,1])
 		#Mooo = ax.plot(Data.iloc[:,0], mymodel(Data.iloc[:,0]))
@@ -109,17 +129,27 @@ class aplic():
 
 		def animate(i):
 			#Se obtiene loa valores que se van a graficar
+			global TF 
+			global DF
+			global AAAAAA
+			#print(len(TF))
 
 			OI = Out_L(SV.get())
 
 			if len(OI) != 0:
-				Data_coý = Data.copy()
-				Data_coý.drop(OI, inplace=True)
+				Data_cop = Data.copy()
+				Data_cop.drop(OI, inplace=True)
+				TF = Data_cop.iloc[:,0]
+				DF = Data_cop.iloc[:,1]
+
+
 				ax.clear()
-				ax.scatter(Data_coý.iloc[:,0], Data_coý.iloc[:,1], c='#1f77b4')
+				ax.scatter(TF, DF, c='#1f77b4')
 			else:
 				ax.clear()
 				ax.scatter(Data.iloc[:,0], Data.iloc[:,1], c='#1f77b4')
+				TF = Data.iloc[:,0]
+				DF = Data.iloc[:,1]
 				"""Nx, Ny = get_new()
 				#Se añade a la lista de puntos 
 				VX.extend(Nx)
@@ -129,13 +159,47 @@ class aplic():
 				"""
 
 
-		span = SpanSelector(ax, onselect, "horizontal", useblit=True)
+		
 		# Set useblit=True on most backends for enhanced performance.
 		
+		line2, = ax2.plot([], [])
+		Regeee, = ax2.plot([],[], 'r')
+		def onselect(xmin, xmax):
+			#ax2.clear()
+			global AAAAAA
+			AAAAAA = True
+			indmin, indmax = np.searchsorted(TF, (xmin, xmax))
+			indmax = min(len(TF) - 1, indmax)
 
+			region_x = TF[indmin:indmax]
+			region_y = DF[indmin:indmax]
+
+			if len(region_x) >= 2:
+			    line2.set_data(region_x, region_y)
+			    ax2.set_xlim(region_x.min()-10, region_x.max()+10)
+			    ax2.set_ylim(region_y.min()-10, region_y.max()+10)
+			    fig1.canvas.draw_idle()
+			    V = des.get()
+			    if( V == ''):
+			    	print()
+			    elif (V == 'Lineal'):
+			    	Model = R2(region_x, region_y, 1)
+			    	LR.config(text = str(Model))
+			    	Regeee.set_data(region_x,Model(region_x))
+			    elif (V == 'Cuadrática'):
+			    	Model = R2(region_x, region_y, 2)
+			    	LR.config(text = str(Model))
+			    	Regeee.set_data(region_x,Model(region_x))
+			    elif (V == 'Sinusoidal'):
+			    	print()
+
+			    
+
+		span = SpanSelector(ax, onselect, "horizontal", useblit=True)
 
 
 		ani = animation.FuncAnimation(fig, animate)
+		
 
 		
 
