@@ -16,6 +16,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from math import pi
 from matplotlib.widgets import SpanSelector
 import os
+from sklearn import metrics
 import pathlib
 
 fig, ax = plt.subplots()
@@ -29,19 +30,6 @@ AAAAAA = False
 opt = ['Lineal', 'Cuadrática']
 DF = D 
 Tiempo = Tiempo.astype(float)
-
-"""
-CURR_DIR = os.getcwd()
-print(CURR_DIR)
-directorio = pathlib.Path(CURR_DIR)
-Archivos = os.listdir(directorio)
-
-for i in Archivos:
-	if i.split('.')[-1] != 'csv':
-		Archivo = Archivos.remove(i)
-print(Archivos)
-#data.to_csv('example.csv', sep =';', index = False)
-"""
 
 
 class aplic():
@@ -84,6 +72,13 @@ class aplic():
 		LRG = Label(W, text = 'polinomio de la regresión:', font = fontt, bg = '#F0B27A')
 		LRG.place(x = 325, y = 35)
 
+		global LC
+		LC = Label(W, text = "", font = fontt, bg = '#F0B27A')
+		LC.place(x = 525, y = 55)
+
+		LCG = Label(W, text = 'R cuadrado:', font = fontt, bg = '#F0B27A')
+		LCG.place(x = 525, y = 35)
+
 
 		CA = FigureCanvasTkAgg(fig, master=self.Can)
 		CA.get_tk_widget().place(x = 25, y = 25)
@@ -125,6 +120,10 @@ class aplic():
 			new_y = [Y[-1]]
 
 			return new_X, new_y
+
+		def RSquare(M, Y, X):
+			R = metrics.r2_score(Y, M(X))
+			return R
 
 
 		def animate(i):
@@ -185,10 +184,12 @@ class aplic():
 			    elif (V == 'Lineal'):
 			    	Model = R2(region_x, region_y, 1)
 			    	LR.config(text = str(Model))
+			    	LC.config(text = str(RSquare(Model,region_y,region_x)))
 			    	Regeee.set_data(region_x,Model(region_x))
 			    elif (V == 'Cuadrática'):
 			    	Model = R2(region_x, region_y, 2)
 			    	LR.config(text = str(Model))
+			    	LC.config(text = str(RSquare(Model,region_y,region_x)))
 			    	Regeee.set_data(region_x,Model(region_x))
 			    elif (V == 'Sinusoidal'):
 			    	print()
